@@ -1,0 +1,8 @@
+OR(
+ISBLANK( Question__c ),
+ISBLANK( Variant_1__c ),
+ISBLANK( Variant_2__c ),
+ISBLANK( Variant_3__c ),
+ISBLANK( Variant_4__c ),
+ISBLANK( Right_Variant__c )
+)
