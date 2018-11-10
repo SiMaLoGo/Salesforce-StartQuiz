@@ -1,0 +1,181 @@
+<apex:page controller="StartQuizController">
+    <apex:slds />
+    <style>
+        	.radioGroup {
+        		font-size: 20px;
+       	 	}
+        
+        	.progressBar {
+        		width: 100%;
+        		text-align: center;
+        		font-size: 20px;
+        	}
+        
+        	.victory {
+        		background-color: rgba(0,128,0,0.2);
+        		border-left: 2px solid rgba(0,128,0,0.8) !important;
+        	}
+        
+        	.loss {
+        		background-color: rgba(255,0,0,0.2);
+        		border-left: 2px solid rgba(255,0,0,0.8) !important;
+        	}
+        
+        	.resultBar {
+        		display: flex;
+        		flex-direction: row;
+        		justify-content: space-between;
+        	}
+        
+        	.percentOfCompleteness {
+        		font-size: 30px;
+        	}
+	</style>
+    
+    <apex:form id="form">
+        
+        <!-- Select Test section -->
+        <apex:outputPanel rendered="{! AND(!isTestSelected, !isTestFinished) }">
+            <div class="slds-scope slds-box">
+                <h1>
+                    <span class="slds-page-header__title slds-truncate">Start quiz</span>
+                </h1>
+                <apex:pageMessages />
+                <apex:commandButton styleClass="slds-button slds-button_neutral" reRender="form" action="{! openModal }" value="Open modal" />
+                <br />
+                
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
+                    <thead>
+                        <th class="slds-text-title_caps">Test name</th>
+                        <th class="slds-text-title_caps">Question count</th>
+                        <th class="slds-text-title_caps">Action</th>
+                    </thead>
+                    
+                    <tbody>
+            			<apex:repeat value="{! existingTests }" var="test">
+            				<tr>
+                				<td>
+                                    <apex:outputLink value="/{! test.id }" target="_blank">
+                                        {! test.Subject__c }
+                                    </apex:outputLink>
+                                </td>
+                				<td>
+                                    <!-- get value from trigger -->
+                                    {! test.Question_Count__c }
+                                </td>
+                				<td>
+                    				<apex:commandButton action="{! startTest }" value="Start Test" reRender="form" styleClass="slds-button slds-button_neutral">
+                        				<apex:param value="{! test.Id }" name="testName" assignTo="{! selectedTestId }" />
+                    				</apex:commandButton>
+                				</td>
+            				</tr>
+            			</apex:repeat>
+        			</tbody>
+                </table>
+            </div>
+        </apex:outputPanel>
+        
+        <!-- Question section -->
+        <apex:outputPanel rendered="{! AND(isTestSelected, !isTestFinished) }">
+            <div class="slds-scope slds-box">
+                <!-- Button Cancel Test -->
+                <apex:commandButton action="{! cancelTest }" value="Cancel Test" reRender="form" styleClass="slds-button slds-button_neutral">
+                </apex:commandButton>
+                <br /><br />
+                
+                <h1>
+                    <span class="slds-page-header__title slds-truncate">Question:</span>
+                    <span class="slds-page-header__title slds-truncate">{! currentQuestion.Question__c }</span>
+                </h1>
+                <apex:pageMessages />
+                <br />
+                
+                <apex:selectRadio value="{! selectedVariant }" layout="pageDirection" styleClass="radioGroup">
+                    <!-- Shows list of variants -->
+                    <apex:selectOptions value="{! variants }" />
+                </apex:selectRadio>
+                <br />
+                <!-- Button Back -->
+                <apex:commandButton action="{! back }" value="{! IF(indexOfQuestion == 0, 'Back', '< Previous') }" reRender="form" styleClass="slds-button slds-button_neutral">
+                </apex:commandButton>
+                <!-- Button Next or Finish -->
+                <apex:commandButton action="{! nextQuestion }" value="{! IF(indexOfQuestion + 1 == questions.size, 'Finish', 'Next >') }" reRender="form" styleClass="slds-button slds-button_neutral">
+                </apex:commandButton>
+                <!-- Shows a nnumber of question -->
+                <div class="progressBar">
+                    {! indexOfQuestion + 1 }&nbsp;/&nbsp;{! questions.size }
+                </div>
+            </div> 
+       </apex:outputPanel>
+        
+      	<!-- Result Table section -->
+        <apex:outputPanel rendered="{! isTestFinished }">
+            <div class="slds-scope slds-box">
+                <h1>
+                    <span class="slds-page-header__title slds-truncate">
+                        Quiz is finished.
+                    </span>
+                </h1>
+                <br />
+                
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered slds-no-row-hover">
+                    <thead>
+                        <th class="slds-text-title_caps">Question</th>
+                        <th class="slds-text-title_caps">Right answer</th>
+                        <th class="slds-text-title_caps">Your answer</th>
+                    </thead>
+
+                    <tbody>
+                        <apex:repeat value="{! questions }" var="question">
+                            <tr>
+                                <td>
+                                    {! question.Question__c }
+                                </td>
+                                <td>
+                                    {! question.Right_Variant__c }
+                                </td>
+                                <td class="{! IF(answerByQuestion[question.Id] == question.Right_Variant__c, 'victory', 'loss') }">
+                                    {! answerByQuestion[question.Id] }
+                                </td>
+                            </tr>
+                        </apex:repeat>
+                    </tbody>
+                </table>
+                <br />
+                
+                <div class="resultBar">
+                    <span class="slds-page-header__title slds-truncate" style="margin: auto 0;">
+                        Total quantity of right answers: {! session.Right_Answers__c }
+                    </span>
+                    <span class="percentOfCompleteness" style="color: {! IF(percentOfCompleteness > 50, 'rgba(0,128,0,0.7)', 'rgba(255,0,0,0.8)') };">
+                        {! percentOfCompleteness }%
+                    </span>
+                </div>
+            </div>
+        </apex:outputPanel>
+
+        <!--Modal-->
+        <apex:outputPanel rendered="{! isModalOpened }">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container" style="z-index:9001;">
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <p>
+                            Правила прохождения теста:
+                            <ul>
+                                <li>Нужно выбрать один из четырех вариантов</li>
+                                <li>Для каждого вопроса обязательно нужно выбрать вариант ответа</li>
+                                <li>К предыдущим вопросам можно возвращаться</li>
+                                <li>Для удовлетворительной оценки теста нужно не менее 50% правильных ответов</li>
+                                <li>Можно отменить прохождение теста</li>
+                        	</ul>
+                        </p>
+                    </div>
+                	<footer class="slds-modal__footer">
+                        <apex:commandButton styleClass="slds-button slds-button_neutral" reRender="form" action="{! closeModal }" value="close" />
+                	</footer>
+                </div>
+            </section>
+        	<div class="slds-backdrop slds-backdrop_open"></div>
+        </apex:outputPanel>
+    </apex:form>
+</apex:page>
