@@ -1,6 +1,7 @@
 <apex:page controller="StartQuizController">
     <apex:slds />
-    <apex:stylesheet value="{!URLFOR($Resource.Quiz_zip, 'Quiz/quiz.css')}"/>
+    <!--<apex:stylesheet value="{!URLFOR($Resource.Quiz_zip, 'Quiz/quiz.css')}"/>-->
+    <apex:stylesheet value="{!$Resource.Quiz_css}"/>
     
     <apex:form id="form">
         
