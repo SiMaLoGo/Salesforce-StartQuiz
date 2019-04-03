@@ -18,7 +18,7 @@ Note: The link to the test must be required.
 The object that should contain a link to the selected test, the number of questions in
 test, the number of correct answers, the number of incorrect answers and the percentage
 completion of the test.
-=======================================================================================
+
 Система тестирования позволяет составлять тесты с
 различным количеством вопросов, создавать/изменять/удалять вопросы для
 определенного теста, проходить составленные тесты и сохранять результат
